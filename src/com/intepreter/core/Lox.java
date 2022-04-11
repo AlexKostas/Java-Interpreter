@@ -53,6 +53,7 @@ public class Lox {
             System.out.println(token);
     }
 
+    //TODO: move this to a separate error reporting class
     public static void error(int line, String message){
         report(line, "", message);
     }

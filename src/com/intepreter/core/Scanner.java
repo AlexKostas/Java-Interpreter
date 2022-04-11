@@ -4,15 +4,39 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import static com.intepreter.core.TokenType.*;
 
 public class Scanner {
+    //TODO: add support for multiline comments
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
 
     private int start= 0; //points to the first char in current lexeme
     private int current = 0; //points to current character
     private int line = 1; //current line
+
+    private static final Map<String, TokenType> keywords;
+
+    static {
+        keywords = new HashMap<>();
+        keywords.put("and",    AND);
+        keywords.put("class",  CLASS);
+        keywords.put("else",   ELSE);
+        keywords.put("false",  FALSE);
+        keywords.put("for",    FOR);
+        keywords.put("fun",    FUN);
+        keywords.put("if",     IF);
+        keywords.put("nil",    NIL);
+        keywords.put("or",     OR);
+        keywords.put("print",  PRINT);
+        keywords.put("return", RETURN);
+        keywords.put("super",  SUPER);
+        keywords.put("this",   THIS);
+        keywords.put("true",   TRUE);
+        keywords.put("var",    VAR);
+        keywords.put("while",  WHILE);
+    }
 
     Scanner(String source){
         this.source = source;
@@ -90,10 +114,58 @@ public class Scanner {
             case '\n':
                 line++;
                 break;
+            case '"':
+                readString();
+                break;
             default:
-                Lox.error(line, "Unexpected character");
+                if(isDigit(c)){
+                    readNumber();
+                    break;
+                }
+                if(isLetterOrUnderscore(c)){
+                    readIdentifier();
+                    break;
+                }
+
+                Lox.error(line, "Unexpected character: " + c);
                 break;
         }
+    }
+
+    private void readNumber() {
+        while (isDigit(peek())) advance();
+
+        if(peek() == '.' && isDigit(peekNext())){
+            advance();
+            while(isDigit(peek())) advance();
+        }
+
+        addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
+    }
+
+    private void readIdentifier(){
+        while(isAlphaNumeric(peek())) advance();
+
+        String text = source.substring(start, current);
+
+        TokenType type = keywords.get(text);
+        if(type == null) type = IDENTIFIER;
+
+        addToken(type);
+    }
+
+    private boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private boolean isLetterOrUnderscore(char c){
+        return (c >= 'A' && c <= 'Z') ||
+                (c >= 'a' && c <= 'z') ||
+                c == '_';
+    }
+
+    private boolean isAlphaNumeric(char c){
+        return isDigit(c) || isLetterOrUnderscore(c);
     }
 
     private boolean match(char expected) {
@@ -107,6 +179,30 @@ public class Scanner {
     private char peek(){
         if(isAtEnd()) return '\0';
         return source.charAt(current);
+    }
+
+    private char peekNext(){
+        if(current + 1 >= source.length()) return '\0';
+        return source.charAt(current+1);
+    }
+
+    private void readString(){
+        while(peek() != '"' && !isAtEnd()){
+            if(peek() == '\n') line++;
+            advance();
+        }
+
+        if(isAtEnd()){
+            Lox.error(line, "Unterminated string");
+            return;
+        }
+
+        //eat the closing "
+        advance();
+
+        //Remove string quotes
+        String value = source.substring(start+1, current-1);
+        addToken(STRING, value);
     }
 
     private boolean isAtEnd(){
