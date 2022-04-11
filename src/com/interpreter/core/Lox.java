@@ -1,4 +1,4 @@
-package com.intepreter.core;
+package com.interpreter.core;
 
 import java.io.BufferedReader;
 import java.io.IOException;

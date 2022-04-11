@@ -1,4 +1,4 @@
-package com.intepreter.core;
+package com.interpreter.core;
 
 public enum TokenType {
     // Single-character tokens.

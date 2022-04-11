@@ -1,4 +1,4 @@
-package com.intepreter.core;
+package com.interpreter.core;
 
 public class Token {
     final TokenType type;
